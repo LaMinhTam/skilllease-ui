@@ -1,20 +1,15 @@
-import { createContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useState, ReactNode } from "react";
+import { User } from "../entities/user";
 
-interface User {
-  email: string;
-  accessToken: string;
-  refreshToken: string;
-  roles: { id: number; name: string; description: string }[];
-}
-
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   login: (userData: User) => void;
   logout: () => void;
 }
 
-// Provide a default empty context
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {

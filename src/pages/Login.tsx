@@ -3,6 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import { TextField, Button, Container, Typography } from "@mui/material";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const auth = useContext(AuthContext);
@@ -16,14 +17,26 @@ const Login = () => {
 
   const { login } = auth;
 
-  const handleSubmit = async (e: { preventDefault: () => void }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await api.post("/auth/login", { email, password });
-      login(response.data.data);
+      // API response contains accessToken, refreshToken, and userResponseDTO.
+      const { accessToken, refreshToken, userResponseDTO } = response.data.data;
+      const userData = {
+        id: userResponseDTO.id, // if available
+        fullName: userResponseDTO.fullName,
+        email: userResponseDTO.email,
+        role: userResponseDTO.role,
+        cvUrl: userResponseDTO.cvUrl,
+        profilePictureUrl: userResponseDTO.profilePictureUrl,
+        accessToken,
+        refreshToken,
+      };
+      login(userData);
       navigate("/");
     } catch (error) {
-      alert("Login failed!");
+      toast.error("Invalid email or password.");
     }
   };
 
@@ -31,9 +44,24 @@ const Login = () => {
     <Container maxWidth="xs">
       <Typography variant="h4">Login</Typography>
       <form onSubmit={handleSubmit}>
-        <TextField fullWidth label="Email" margin="normal" onChange={(e) => setEmail(e.target.value)} />
-        <TextField fullWidth type="password" label="Password" margin="normal" onChange={(e) => setPassword(e.target.value)} />
-        <Button fullWidth variant="contained" color="primary" type="submit">Login</Button>
+        <TextField
+          fullWidth
+          label="Email"
+          margin="normal"
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <TextField
+          fullWidth
+          type="password"
+          label="Password"
+          margin="normal"
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <Button fullWidth variant="contained" color="primary" type="submit">
+          Login
+        </Button>
       </form>
     </Container>
   );

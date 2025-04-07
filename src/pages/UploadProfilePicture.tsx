@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Button, Container, Typography, Box, Avatar } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
+import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const UploadProfilePicture = () => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const navigate = useNavigate();
+  const auth = useContext(AuthContext);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -18,21 +21,30 @@ const UploadProfilePicture = () => {
 
   const handleUpload = async () => {
     if (!file) {
-      alert("Please select a file.");
+      toast.warn("Please select a file.");
       return;
     }
 
     const formData = new FormData();
-    formData.append("profilePicture", file);
+    formData.append("file", file);
+    formData.append("fileName", file.name);
 
     try {
-      await api.post("/users/profile-picture", formData, {
+      const response = await api.post("/users/profile-picture", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Profile picture uploaded successfully!");
+      toast.success("Profile picture uploaded successfully!");
+
+      const updatedUser = {
+        ...auth?.user,
+        profilePictureUrl: response.data.data.profilePictureUrl,
+      };
+      if (auth) {
+        auth.login(updatedUser);
+      }
       navigate("/");
     } catch (error) {
-      alert("Upload failed!");
+      toast.error("Upload failed!");
     }
   };
 
