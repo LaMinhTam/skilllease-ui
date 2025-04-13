@@ -1,0 +1,86 @@
+<!-- src/app/pages/post-job/post-job.component.html -->
+<div class="container">
+    <h2 class="page-title">Post a New Job</h2>
+    
+    <form (ngSubmit)="onSubmit()" class="job-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Job Title</mat-label>
+        <input matInput [(ngModel)]="jobTitle" name="jobTitle" required>
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Job Description</mat-label>
+        <textarea matInput [(ngModel)]="jobDescription" name="jobDescription" rows="4" required></textarea>
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Budget</mat-label>
+        <input matInput [(ngModel)]="budget" name="budget" required>
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Deadline</mat-label>
+        <input matInput type="date" [(ngModel)]="deadline" name="deadline" required>
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Category</mat-label>
+        <mat-select [(ngModel)]="categoryId" name="category" required>
+          <mat-option *ngFor="let category of categories" [value]="category.id">
+            {{ category.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <!-- Milestone Section -->
+      <div class="milestone-section">
+        <div class="section-header">
+          <h3>Milestones</h3>
+          <button type="button" mat-outlined-button color="primary" (click)="handleOpenMilestoneModal()">
+            <mat-icon>add</mat-icon> Add Milestone
+          </button>
+        </div>
+        
+        <div class="milestone-list" *ngIf="milestones.length > 0">
+          <mat-card *ngFor="let milestone of milestones; let i = index" class="milestone-card">
+            <div class="milestone-header">
+              <h4>
+                <strong>{{ milestone.title }}</strong> ({{ milestone.effort }}%)
+              </h4>
+              <button type="button" mat-icon-button color="warn" (click)="removeMilestone(i)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+            
+            <p class="milestone-description">{{ milestone.description }}</p>
+            <p class="milestone-dates">{{ milestone.startDate }} to {{ milestone.dueDate }}</p>
+            
+            <!-- Checklist Preview -->
+            <div *ngIf="milestone.checklist" class="checklist-preview">
+              <p class="checklist-label">
+                {{ milestone.checklist.length > 100 ? (milestone.checklist | slice:0:100) + '...' : milestone.checklist }}
+              </p>
+            </div>
+            
+            <!-- Effort Slider -->
+            <div class="effort-slider">
+              <p>Effort: {{ milestone.effort }}%</p>
+              <mat-slider min="0" max="100" discrete>
+                <input matSliderThumb [(ngModel)]="milestone.effort" name="effort-{{i}}" (valueChange)="handleEffortChange(i, $event)">
+              </mat-slider>
+            </div>
+          </mat-card>
+          
+          <mat-divider></mat-divider>
+          
+          <div class="total-effort" [ngClass]="{'error': getTotalEffort() !== 100}">
+            Total Effort: {{ getTotalEffort() }}% (must be exactly 100%)
+          </div>
+        </div>
+      </div>
+      
+      <button type="submit" mat-raised-button color="primary" class="submit-button">
+        Post Job
+      </button>
+    </form>
+  </div>

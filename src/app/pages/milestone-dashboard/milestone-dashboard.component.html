@@ -1,0 +1,422 @@
+<!-- src/app/pages/milestone-dashboard/milestone-dashboard.component.html -->
+<div class="container">
+  <!-- Main content container - the mat-drawer-container surrounds everything -->
+  <mat-drawer-container class="drawer-container" [hasBackdrop]="true">
+    <!-- Main content inside mat-drawer-content -->
+    <mat-drawer-content>
+      <div class="header-section">
+        <h1 class="main-title">Project Milestones</h1>
+        <p class="subtitle">Track progress and manage deliverables for contract #{{contractId}}</p>
+      </div>
+    
+      <!-- Overview Cards -->
+      <div class="overview-section">
+        <div class="overview-grid">
+          <div class="overview-card">
+            <mat-card>
+              <mat-card-content>
+                <h3 class="card-title">
+                  <mat-icon>scale</mat-icon> Project Completion
+                </h3>
+                <div class="progress-container">
+                  <div class="progress-header">
+                    <span class="progress-label">Overall Progress</span>
+                    <span class="progress-value">{{ totalEffort > 0 ? Math.round((completedEffort / totalEffort) * 100) : 0 }}%</span>
+                  </div>
+                  <mat-progress-bar 
+                    mode="determinate" 
+                    [value]="totalEffort > 0 ? (completedEffort / totalEffort) * 100 : 0"
+                    class="progress-bar">
+                  </mat-progress-bar>
+                  <span class="progress-subtitle">
+                    {{completedEffort}} of {{totalEffort}} effort points completed
+                  </span>
+                </div>
+                <mat-divider></mat-divider>
+                <div class="budget-summary">
+                  <div class="budget-item">
+                    <span class="budget-label">Total Budget</span>
+                    <span class="budget-value total">{{formatCurrency(totalAmount)}}</span>
+                  </div>
+                  <div class="budget-item">
+                    <span class="budget-label">Released</span>
+                    <span class="budget-value released">{{formatCurrency(completedAmount)}}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+          
+          <div class="overview-card">
+            <mat-card>
+              <mat-card-content>
+                <h3 class="card-title">
+                  <mat-icon>assignment</mat-icon> Milestone Status
+                </h3>
+                <div class="status-breakdown" *ngIf="!loading; else loadingSpinner">
+                  <div class="status-row">
+                    <span class="status-label">Approved</span>
+                    <span class="status-value">{{getApprovedCount()}}</span>
+                  </div>
+                  <mat-divider></mat-divider>
+                  <div class="status-row">
+                    <span class="status-label">Pending Review</span>
+                    <span class="status-value">{{getPendingCount()}}</span>
+                  </div>
+                  <mat-divider></mat-divider>
+                  <div class="status-row">
+                    <span class="status-label">Needs Updates</span>
+                    <span class="status-value">{{getRejectedCount()}}</span>
+                  </div>
+                  <mat-divider></mat-divider>
+                  <div class="status-row">
+                    <span class="status-label">Not Started</span>
+                    <span class="status-value">{{getNotStartedCount()}}</span>
+                  </div>
+                </div>
+                <ng-template #loadingSpinner>
+                  <div class="loading-spinner-container">
+                    <mat-spinner diameter="24"></mat-spinner>
+                  </div>
+                </ng-template>
+                <mat-divider></mat-divider>
+                <div class="milestone-count">
+                  <span>{{milestones.length}} total milestones in this contract</span>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </div>
+    
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-container">
+        <mat-spinner></mat-spinner>
+      </div>
+    
+      <!-- Empty State -->
+      <div *ngIf="!loading && milestones.length === 0" class="empty-state">
+        <mat-icon class="empty-icon">assignment</mat-icon>
+        <h2 class="empty-title">No milestones found</h2>
+        <p class="empty-subtitle">This contract doesn't have any milestones defined yet</p>
+      </div>
+    
+      <!-- Milestone Grid -->
+      <div *ngIf="!loading && milestones.length > 0" class="milestone-grid">
+        <div *ngFor="let ms of milestones; let index = index" class="milestone-item">
+          <mat-card class="milestone-card" 
+            [ngClass]="{
+              'rejected-card': ms.reviewStatus === 'REJECTED', 
+              'approved-card': ms.reviewStatus === 'APPROVED'
+            }">
+            <!-- Status indicator strip -->
+            <div class="status-strip" [ngClass]="'status-' + getStatusColor(ms.reviewStatus)"></div>
+            
+            <!-- Card Header -->
+            <div class="milestone-header">
+              <div class="milestone-title">
+                <div class="milestone-number" [ngClass]="'bg-' + getStatusColor(ms.reviewStatus)">
+                  {{index + 1}}
+                </div>
+                <span class="title-text">{{ms.title}}</span>
+              </div>
+              <mat-chip-listbox>
+                <mat-chip 
+                  [matTooltip]="getMilestoneStatusText(ms)"
+                  [color]="getStatusColor(ms.reviewStatus)"
+                  selected>
+                  <mat-icon>{{getStatusIcon(ms.reviewStatus, ms.deliverableUrl)}}</mat-icon>
+                  {{getMilestoneStatusText(ms)}}
+                </mat-chip>
+              </mat-chip-listbox>
+            </div>
+    
+            <mat-card-content>
+              <!-- Description -->
+              <p class="milestone-description">{{ms.description}}</p>
+              
+              <!-- Milestone details grid -->
+              <div class="details-grid">
+                <div class="detail-box">
+                  <p class="detail-label">
+                    <mat-icon>monetization_on</mat-icon> Amount
+                  </p>
+                  <p class="detail-value">{{formatCurrency(ms.amount || 0)}}</p>
+                </div>
+                <div class="detail-box">
+                  <p class="detail-label">
+                    <mat-icon>scale</mat-icon> Effort
+                  </p>
+                  <p class="detail-value">{{ms.effort}}%</p>
+                </div>
+              </div>
+    
+              <!-- Due date with warning -->
+              <div class="due-date-box" 
+                [ngClass]="{
+                  'overdue': isOverdue(ms.dueDate) && ms.reviewStatus !== 'APPROVED',
+                  'due-soon': isDueSoon(ms.dueDate) && ms.reviewStatus !== 'APPROVED'
+                }">
+                <mat-icon 
+                  [ngClass]="{
+                    'error-color': isOverdue(ms.dueDate) && ms.reviewStatus !== 'APPROVED',
+                    'warning-color': isDueSoon(ms.dueDate) && ms.reviewStatus !== 'APPROVED',
+                    'primary-color': !isOverdue(ms.dueDate) && !isDueSoon(ms.dueDate) || ms.reviewStatus === 'APPROVED'
+                  }">
+                  calendar_month
+                </mat-icon>
+                <div class="date-content">
+                  <span class="date-label">Due Date</span>
+                  <span class="date-value" 
+                    [ngClass]="{
+                      'error-color': isOverdue(ms.dueDate) && ms.reviewStatus !== 'APPROVED',
+                      'warning-color': isDueSoon(ms.dueDate) && ms.reviewStatus !== 'APPROVED'
+                    }">
+                    {{formatDate(ms.dueDate)}}
+                  </span>
+                  <span class="date-status error-color" *ngIf="isOverdue(ms.dueDate) && ms.reviewStatus !== 'APPROVED'">
+                    Overdue
+                  </span>
+                  <span class="date-status warning-color" *ngIf="isDueSoon(ms.dueDate) && ms.reviewStatus !== 'APPROVED'">
+                    Due soon
+                  </span>
+                </div>
+              </div>
+    
+              <!-- Feedback when available -->
+              <div *ngIf="ms.feedback || ms.fulfillmentComment" class="feedback-section">
+                <div *ngIf="ms.feedback" class="feedback-box" [ngClass]="{'rejected-feedback': ms.reviewStatus === 'REJECTED'}">
+                  <span class="feedback-label">Employer Feedback</span>
+                  <p class="feedback-text" [ngClass]="{'rejected-text': ms.reviewStatus === 'REJECTED'}">
+                    {{ms.feedback}}
+                  </p>
+                </div>
+              </div>
+    
+              <!-- Deliverable link if available -->
+              <div *ngIf="ms.deliverableUrl && !ms.hidden" class="deliverable-box">
+                <mat-icon color="primary">link</mat-icon>
+                <div class="deliverable-content">
+                  <span class="deliverable-label">Deliverable</span>
+                  <a 
+                    class="deliverable-link" 
+                    [href]="ms.deliverableUrl" 
+                    target="_blank" 
+                    rel="noopener noreferrer">
+                    View Deliverable
+                  </a>
+                </div>
+              </div>
+            </mat-card-content>
+
+            <!-- Also update the mat-card-actions section -->
+            <mat-card-actions>
+              <div class="action-buttons">
+                <button mat-stroked-button color="primary" (click)="handleOpenMilestoneDetail(ms)">
+                  <mat-icon>list_alt</mat-icon>
+                  Details
+                </button>
+                
+                <button 
+                  *ngIf="canUpdate(ms)"
+                  mat-raised-button 
+                  [color]="ms.reviewStatus === 'REJECTED' ? 'warn' : 'primary'"
+                  (click)="handleUpdateDeliverable(ms)">
+                  <mat-icon>
+                    {{ms.reviewStatus === 'REJECTED' ? 'error' : (ms.deliverableUrl ? 'update' : 'send')}}
+                  </mat-icon>
+                  {{ms.reviewStatus === 'REJECTED' ? 'Update' : (ms.deliverableUrl ? 'Update' : 'Submit')}}
+                </button>
+                
+                <button 
+                  *ngIf="canReview(ms)"
+                  mat-raised-button 
+                  color="accent"
+                  (click)="handleOpenMilestoneDetail(ms)">
+                  <mat-icon>edit</mat-icon>
+                  Review
+                </button>
+              </div>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </div>
+    </mat-drawer-content>
+
+    <!-- Drawer Panel - This is the right/left sliding panel -->
+    <mat-drawer
+      [mode]="'over'"
+      [position]="isMobile ? 'start' : 'end'"
+      [opened]="detailDrawerOpen"
+      [disableClose]="false"
+      (closed)="handleCloseMilestoneDetail()"
+      [ngClass]="{'mobile-drawer': isMobile}"
+      class="detail-drawer">
+      <div *ngIf="selectedMilestone" class="drawer-content">
+        <!-- Drawer Header -->
+        <mat-toolbar class="drawer-header">
+          <button mat-icon-button (click)="handleCloseMilestoneDetail()">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          <span class="header-title">Milestone Details</span>
+          <span class="spacer"></span>
+        </mat-toolbar>
+        
+        <!-- Drawer Body -->
+        <div class="drawer-body">
+          <!-- Milestone overview -->
+          <div class="detail-section">
+            <h3 class="detail-title primary-color">{{selectedMilestone.title}}</h3>
+            <p class="detail-description">{{selectedMilestone.description}}</p>
+            
+            <div class="milestone-metadata">
+              <div class="metadata-item">
+                <span class="metadata-label">Amount</span>
+                <span class="metadata-value primary-color">{{formatCurrency(selectedMilestone.amount || 0)}}</span>
+              </div>
+              <mat-divider [vertical]="true"></mat-divider>
+              <div class="metadata-item">
+                <span class="metadata-label">Effort</span>
+                <span class="metadata-value">{{selectedMilestone.effort}}%</span>
+              </div>
+              <mat-divider [vertical]="true"></mat-divider>
+              <div class="metadata-item">
+                <span class="metadata-label">Due Date</span>
+                <span class="metadata-value">{{formatDate(selectedMilestone.dueDate)}}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Review Section for Employer -->
+          <div *ngIf="isEmployer() && selectedMilestone.reviewStatus === 'PENDING' && !selectedMilestone.hidden" class="detail-section review-section">
+            <h4 class="section-label">Review Actions</h4>
+            <div class="employer-review-actions">
+              <button 
+                mat-raised-button 
+                color="primary" 
+                [disabled]="reviewLoading"
+                (click)="handleReviewMilestone(true)"
+                class="full-width approve-button">
+                <mat-icon>check_circle_outline</mat-icon>
+                Approve Milestone
+              </button>
+              <button 
+                mat-raised-button 
+                color="warn" 
+                [disabled]="reviewLoading"
+                (click)="handleReviewMilestone(false)"
+                class="full-width reject-button">
+                <mat-icon>cancel</mat-icon>
+                Reject Milestone
+              </button>
+            </div>
+          </div>
+
+          <!-- Status & Deliverable Section -->
+          <div class="detail-section" [ngClass]="{
+            'approved-section': selectedMilestone.reviewStatus === 'APPROVED',
+            'rejected-section': selectedMilestone.reviewStatus === 'REJECTED',
+            'pending-section': selectedMilestone.reviewStatus === 'PENDING'
+          }">
+            <div class="status-header">
+              <h4 class="section-label">Status:</h4>
+              <mat-chip-listbox>
+                <mat-chip [color]="getStatusColor(selectedMilestone.reviewStatus)">
+                  <mat-icon>{{getStatusIcon(selectedMilestone.reviewStatus, selectedMilestone.deliverableUrl)}}</mat-icon>
+                  {{getMilestoneStatusText(selectedMilestone)}}
+                </mat-chip>
+              </mat-chip-listbox>
+            </div>
+            
+            <!-- Deliverable info -->
+            <!-- Deliverable info -->
+            <div *ngIf="selectedMilestone.deliverableUrl && !selectedMilestone.hidden" class="deliverable-section">
+              <h4 class="section-label">Deliverable:</h4>
+              <a 
+                mat-stroked-button 
+                color="primary" 
+                [href]="selectedMilestone.deliverableUrl" 
+                target="_blank" 
+                rel="noopener noreferrer">
+                <mat-icon>link</mat-icon>
+                Open Deliverable
+              </a>
+              
+              <!-- Freelancer comment -->
+              <div *ngIf="selectedMilestone.fulfillmentComment" class="comment-section">
+                <h4 class="section-label">Freelancer Comment:</h4>
+                <div class="comment-box">
+                  <p class="comment-text">{{selectedMilestone.fulfillmentComment}}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Locked deliverable section -->
+            <div *ngIf="selectedMilestone.deliverableUrl && selectedMilestone.hidden" class="deliverable-section locked-deliverable">
+              <h4 class="section-label">Deliverable Access:</h4>
+              <div class="locked-info">
+                <p><mat-icon color="warn">lock</mat-icon> This deliverable requires payment to access</p>
+              </div>
+              
+              <button 
+                *ngIf="isEmployer()"
+                mat-raised-button 
+                color="warn"
+                [disabled]="paymentProcessing"
+                (click)="handlePayForDeliverable(selectedMilestone)">
+                <mat-icon>payment</mat-icon>
+                Pay to Access Deliverable
+              </button>
+              
+              <!-- Freelancer comment is still visible even if deliverable link is hidden -->
+              <div *ngIf="selectedMilestone.fulfillmentComment" class="comment-section">
+                <h4 class="section-label">Freelancer Comment:</h4>
+                <div class="comment-box">
+                  <p class="comment-text">{{selectedMilestone.fulfillmentComment}}</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Review section -->
+            <div *ngIf="isEmployer() && selectedMilestone.reviewStatus === 'PENDING' && !selectedMilestone.hidden" class="review-section">
+              <h4 class="section-label">Review Feedback:</h4>
+              <mat-form-field appearance="outline" class="full-width">
+                <textarea 
+                  matInput 
+                  [(ngModel)]="reviewFeedback" 
+                  rows="4"
+                  placeholder="Provide feedback on this milestone submission..."></textarea>
+              </mat-form-field>
+            </div>
+            
+            <!-- Feedback section for completed reviews -->
+            <div *ngIf="selectedMilestone.feedback && selectedMilestone.reviewStatus !== 'PENDING'" class="feedback-section">
+              <h4 class="section-label">Employer Feedback:</h4>
+              <div class="feedback-box">
+                <p class="feedback-text">{{selectedMilestone.feedback}}</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Checklist Section -->
+          <div *ngIf="checklists.length > 0" class="detail-section">
+            <h3 class="detail-title primary-color">Requirements Checklist</h3>
+            
+            <div *ngFor="let group of checklists; let groupIndex = index" class="checklist-group">
+              <h4 class="group-title">{{group.title}}</h4>
+              
+              <div *ngFor="let item of group.items; let itemIndex = index" class="checklist-item">
+                <mat-checkbox 
+                  [checked]="item.checked"
+                  (change)="handleChecklistItemToggle(groupIndex, itemIndex)"
+                  [disabled]="!isEmployer()">
+                  <span [ngClass]="{'completed-item': item.checked}">{{item.text}}</span>
+                </mat-checkbox>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-drawer>
+  </mat-drawer-container>
+</div>

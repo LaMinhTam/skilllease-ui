@@ -1,0 +1,36 @@
+<!-- src/app/components/payment-confirmation-dialog/payment-confirmation-dialog.component.html -->
+<h2 mat-dialog-title>
+    <mat-icon color="warn" class="payment-icon">payment</mat-icon>
+    Confirm Payment
+  </h2>
+  
+  <mat-dialog-content>
+    <div class="payment-details">
+      <p class="payment-message">You're about to pay for access to this milestone's deliverable.</p>
+      
+      <div class="milestone-info">
+        <p><strong>Milestone:</strong> {{ data.milestone.title }}</p>
+        <p><strong>Amount:</strong> {{ formatCurrency(data.milestone.amount || 0) }}</p>
+      </div>
+      
+      <div class="payment-warning">
+        <mat-icon color="warn">info</mat-icon>
+        <span>This payment will unlock access to the deliverable. This action cannot be undone.</span>
+      </div>
+    </div>
+  </mat-dialog-content>
+  
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close [disabled]="data.processing">
+      Cancel
+    </button>
+    <button 
+      mat-raised-button 
+      color="warn" 
+      [disabled]="data.processing"
+      (click)="confirmPayment()">
+      <mat-icon>lock_open</mat-icon>
+      <span *ngIf="!data.processing">Confirm Payment</span>
+      <span *ngIf="data.processing">Processing...</span>
+    </button>
+  </mat-dialog-actions>

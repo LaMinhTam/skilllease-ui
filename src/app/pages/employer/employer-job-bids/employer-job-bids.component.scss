@@ -1,0 +1,286 @@
+/* src/app/pages/employer/employer-job-bids/employer-job-bids.component.scss */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+  
+  .job-details {
+    margin-bottom: 40px;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-color: white;
+  }
+  
+  .job-title {
+    font-size: 1.75rem;
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  
+  .job-description {
+    margin-bottom: 24px;
+  }
+  
+  .job-meta {
+    margin-bottom: 32px;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+  }
+  
+  .section-title mat-icon {
+    margin-right: 8px;
+  }
+  
+  .milestones-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+  }
+  
+  .milestone-panel {
+    margin-bottom: 8px;
+    border-radius: 8px !important;
+    overflow: hidden;
+  }
+  
+  .milestone-panel.status-completed {
+    border-left: 4px solid #4caf50;
+  }
+  
+  .milestone-panel.status-submitted {
+    border-left: 4px solid #2196f3;
+  }
+  
+  .milestone-panel.status-overdue {
+    border-left: 4px solid #f44336;
+  }
+  
+  .milestone-panel.status-pending {
+    border-left: 4px solid #ff9800;
+  }
+  
+  .milestone-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-weight: bold;
+    background-color: rgba(0,0,0,0.1);
+  }
+  
+  .milestone-details {
+    padding: 16px 0;
+  }
+  
+  .milestone-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  
+  .milestone-dates, .milestone-effort {
+    flex: 1;
+    min-width: 250px;
+  }
+  
+  .milestone-dates h4, .milestone-effort h4 {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    color: rgba(0,0,0,0.6);
+    font-weight: normal;
+  }
+  
+  .milestone-dates h4 mat-icon, .milestone-effort h4 mat-icon {
+    margin-right: 8px;
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
+  
+  .milestone-date-info, .milestone-effort-info {
+    padding-left: 26px;
+  }
+  
+  .milestone-checklist {
+    margin-top: 24px;
+  }
+  
+  .milestone-checklist h4 {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    color: rgba(0,0,0,0.6);
+    font-weight: normal;
+  }
+  
+  .milestone-checklist h4 mat-icon {
+    margin-right: 8px;
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
+  
+  .checklist-content {
+    padding: 16px;
+    background-color: white;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    font-family: monospace;
+    white-space: pre-wrap;
+  }
+  
+  .milestone-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+  }
+  
+  .milestone-progress {
+    flex: 1;
+  }
+  
+  .progress-bar {
+    height: 8px;
+    border-radius: 4px;
+  }
+  
+  .milestone-budget {
+    text-align: right;
+    padding-left: 16px;
+  }
+  
+  .milestone-budget h3 {
+    margin: 0;
+    color: #1976d2;
+  }
+  
+  .bids-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+  
+  .bid-card mat-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .bid-card mat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  }
+  
+  .bid-amount {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+    color: #1976d2;
+  }
+  
+  .bid-message {
+    margin-top: 16px;
+  }
+  
+  .bid-dates {
+    margin-top: 8px;
+    font-size: 0.9rem;
+  }
+  
+  .freelancer-info {
+    display: flex;
+    align-items: center;
+    margin-top: 16px;
+  }
+  
+  .freelancer-avatar {
+    margin-right: 12px;
+  }
+  
+  .avatar-img, .default-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+  
+  .default-avatar {
+    background-color: #1976d2;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  
+  .freelancer-name {
+    font-weight: 500;
+    margin: 0 0 4px 0;
+  }
+  
+  .star-rating {
+    display: flex;
+    align-items: center;
+  }
+  
+  .star {
+    color: #d3d3d3;
+    font-size: 1.2rem;
+  }
+  
+  .star.filled {
+    color: #ffc107;
+  }
+  
+  .rating-value {
+    margin-left: 4px;
+  }
+  
+  .no-rating {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.9rem;
+  }
+  
+  mat-card-actions {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+    margin-top: auto;
+  }
+  
+  .no-bids {
+    text-align: center;
+    padding: 40px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    margin-top: 16px;
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+  }
+  
+  .loading-container p {
+    margin-top: 16px;
+  }

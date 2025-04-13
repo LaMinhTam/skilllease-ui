@@ -1,0 +1,38 @@
+/* src/app/components/checklist-renderer/checklist-renderer.component.scss */
+.empty-checklist {
+    color: rgba(0, 0, 0, 0.5);
+    font-style: italic;
+    padding: 0.5rem 0;
+  }
+  
+  .checklist-container {
+    padding: 0.5rem 0;
+  }
+  
+  .checklist-section {
+    margin-bottom: 1rem;
+    
+    .section-title {
+      color: #2196F3;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+    }
+    
+    .checklist-item {
+      height: auto !important;
+      margin-bottom: 0.25rem;
+      
+      mat-checkbox {
+        margin-right: 0.75rem;
+      }
+      
+      .item-text {
+        line-height: 1.4;
+      }
+    }
+    
+    mat-divider {
+      margin: 1rem 0;
+    }
+  }

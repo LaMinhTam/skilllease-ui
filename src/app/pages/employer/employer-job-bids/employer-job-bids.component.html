@@ -1,0 +1,231 @@
+<!-- src/app/pages/employer/employer-job-bids/employer-job-bids.component.html -->
+<div class="container">
+  <ng-container *ngIf="job; else loadingJob">
+    <div class="job-details">
+      <h2 class="job-title">{{ job.jobTitle }}</h2>
+      <p class="job-description">{{ job.jobDescription }}</p>
+      
+      <div class="job-meta">
+        <mat-chip-listbox>
+          <mat-chip color="primary" selected>Budget: ${{ job.budget?.toLocaleString() }}</mat-chip>
+          <mat-chip color="accent" selected *ngIf="job.deadline">Deadline: {{ formatDate(job.deadline) }}</mat-chip>
+          <mat-chip *ngIf="job.category">{{ job.category.name }}</mat-chip>
+        </mat-chip-listbox>
+      </div>
+      
+      <!-- Milestones Section -->
+      <div class="milestones-section" *ngIf="job.milestones && job.milestones.length > 0">
+        <h3 class="section-title">
+          <mat-icon>assignment</mat-icon>
+          Milestones
+        </h3>
+        
+        <div class="milestones-container">
+          <mat-accordion>
+            <mat-expansion-panel 
+              *ngFor="let milestone of job.milestones; let i = index" 
+              [expanded]="i === 0" 
+              class="milestone-panel"
+              [ngClass]="getMilestoneStatusClass(milestone)"
+            >
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <div class="milestone-number">{{ i + 1 }}</div>
+                  {{ milestone.title }}
+                </mat-panel-title>
+                <mat-panel-description>
+                  <mat-chip-listbox>
+                    <mat-chip 
+                      [color]="getMilestoneStatusColor(milestone)" 
+                      selected
+                      size="small"
+                    >
+                      {{ getMilestoneStatus(milestone).toUpperCase() }}
+                    </mat-chip>
+                    <mat-chip 
+                      [color]="getMilestoneStatusColor(milestone)"
+                      selected
+                      size="small"
+                      outlined
+                    >
+                      {{ milestone.effort }}%
+                    </mat-chip>
+                  </mat-chip-listbox>
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+              
+              <div class="milestone-details">
+                <p class="milestone-description">{{ milestone.description }}</p>
+                
+                <div class="milestone-grid">
+                  <div class="milestone-dates">
+                    <h4>
+                      <mat-icon>calendar_today</mat-icon>
+                      Timeline
+                    </h4>
+                    <div class="milestone-date-info">
+                      <p><strong>Start:</strong> {{ formatDate(milestone.startDate) }}</p>
+                      <p><strong>Due:</strong> {{ formatDate(milestone.dueDate) }}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="milestone-effort">
+                    <h4>
+                      <mat-icon>access_time</mat-icon>
+                      Effort & Payment
+                    </h4>
+                    <div class="milestone-effort-info">
+                      <p matTooltip="{{ milestone.effort }}% of total effort">
+                        <strong>Effort:</strong> {{ milestone.effort }}%
+                      </p>
+                      <p matTooltip="{{ getPaymentPercentage(milestone) }}% of total budget">
+                        <strong>Payment:</strong> ${{ milestone.amount?.toLocaleString() || '0' }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="milestone-checklist" *ngIf="milestone.checklist">
+                  <h4>
+                    <mat-icon>check</mat-icon>
+                    Checklist
+                  </h4>
+                  <div class="checklist-content">
+                    <div [innerHTML]="milestone.checklist"></div>
+                  </div>
+                </div>
+              </div>
+            </mat-expansion-panel>
+          </mat-accordion>
+          
+          <mat-divider></mat-divider>
+          
+          <div class="milestone-summary">
+            <div class="milestone-progress">
+              <p>Total Progress: {{ getTotalEffort() }}%</p>
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="getTotalEffort()" 
+                class="progress-bar"
+              ></mat-progress-bar>
+            </div>
+            
+            <div class="milestone-budget">
+              <p>Total Budget</p>
+              <h3>${{ getTotalAmount().toLocaleString() }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bids Section -->
+    <h3 class="section-title">Bids for this Job</h3>
+    
+    <div class="bids-container" *ngIf="bids.length > 0; else noBids">
+      <div class="bids-grid">
+        <div class="bid-card" *ngFor="let bid of bids">
+          <mat-card (click)="handleFreelancerClick(bid.freelancer.id || 0)">
+            <mat-card-content>
+              <h3 class="bid-amount">Bid Amount: ${{ bid.bidAmount?.toLocaleString() }}</h3>
+              
+              <mat-chip-listbox>
+                <mat-chip 
+                  [color]="getBidStatusColor(bid.status)" 
+                  selected
+                >
+                  Status: {{ bid.status }}
+                </mat-chip>
+              </mat-chip-listbox>
+              
+              <p class="bid-message"><strong>Message:</strong> {{ bid.message }}</p>
+              
+              <p class="bid-dates" *ngIf="bid.proposedStartDate && bid.proposedEndDate">
+                <strong>Proposed Period:</strong>
+                {{ formatDate(bid.proposedStartDate) }} to {{ formatDate(bid.proposedEndDate) }}
+              </p>
+              
+              <p *ngIf="bid.supportAvailability">
+                <strong>Support:</strong> {{ bid.supportAvailability }}
+              </p>
+              
+              <p *ngIf="bid.additionalPolicy">
+                <strong>Policy:</strong> {{ bid.additionalPolicy }}
+              </p>
+              
+              <mat-divider></mat-divider>
+              
+              <div class="freelancer-info">
+                <div class="freelancer-avatar">
+                  <ng-container *ngIf="bid.freelancer.profilePictureUrl; else defaultAvatar">
+                    <img 
+                      [src]="bid.freelancer.profilePictureUrl" 
+                      [alt]="bid.freelancer.fullName" 
+                      class="avatar-img"
+                    >
+                  </ng-container>
+                  <ng-template #defaultAvatar>
+                    <div class="default-avatar">
+                      {{ getInitials(bid.freelancer.fullName || '') }}
+                    </div>
+                  </ng-template>
+                </div>
+                
+                <div class="freelancer-details">
+                  <p class="freelancer-name">{{ bid.freelancer.fullName }}</p>
+                  
+                  <div class="freelancer-rating" *ngIf="bid.freelancer.rating !== null; else noRating">
+                    <div class="star-rating">
+                      <span 
+                        *ngFor="let star of getStars(bid.freelancer.rating || 0)" 
+                        class="star" 
+                        [ngClass]="{'filled': star <= (bid.freelancer.rating || 0)}"
+                      >
+                        ★
+                      </span>
+                      <span class="rating-value">{{ bid.freelancer.rating?.toFixed(1) }}</span>
+                    </div>
+                  </div>
+                  
+                  <ng-template #noRating>
+                    <p class="no-rating">No rating</p>
+                  </ng-template>
+                </div>
+              </div>
+            </mat-card-content>
+            
+            <mat-card-actions *ngIf="!contract && bid.status === 'pending'">
+              <button 
+                mat-raised-button 
+                color="primary" 
+                (click)="updateBidStatus($event, bid.id, 'accepted')"
+              >
+                Accept & Create Contract
+              </button>
+              <button 
+                mat-stroked-button 
+                color="warn" 
+                (click)="updateBidStatus($event, bid.id, 'rejected')"
+              >
+                Reject
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+    
+    <ng-template #noBids>
+      <div class="no-bids">
+        <p>No bids for this job yet.</p>
+      </div>
+    </ng-template>
+  </ng-container>
+  
+  <ng-template #loadingJob>
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading job details...</p>
+    </div>
+  </ng-template>
+</div>

@@ -1,0 +1,19 @@
+<!-- src/app/components/checklist-renderer/checklist-renderer.component.html -->
+<div *ngIf="!markdown || !markdown.trim()" class="empty-checklist">
+    <p>No checklist items available</p>
+  </div>
+  
+  <div *ngIf="sections.length > 0" class="checklist-container">
+    <div *ngFor="let section of sections; let last = last" class="checklist-section">
+      <h4 class="section-title">{{ section.title }}</h4>
+      
+      <mat-list dense>
+        <mat-list-item *ngFor="let item of section.items" class="checklist-item">
+          <mat-checkbox [checked]="item.checked" disabled color="primary"></mat-checkbox>
+          <span class="item-text">{{ item.text }}</span>
+        </mat-list-item>
+      </mat-list>
+      
+      <mat-divider *ngIf="!last"></mat-divider>
+    </div>
+  </div>

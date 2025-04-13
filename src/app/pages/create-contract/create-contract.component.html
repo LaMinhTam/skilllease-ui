@@ -1,0 +1,173 @@
+<!-- src/app/pages/create-contract/create-contract.component.html -->
+<div class="container">
+    <div *ngIf="loading" class="loading-container">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      <h3>Loading bid details...</h3>
+    </div>
+    
+    <div *ngIf="!loading" class="content-container">
+      <div class="header-section">
+        <h1 class="main-title">Create Contract</h1>
+        <p class="subtitle">Review the bid details and create a contract with the freelancer</p>
+      </div>
+      
+      <div class="contract-layout">
+        <!-- Left side - Bid Information -->
+        <div class="bid-info-container">
+          <mat-card class="bid-info-card">
+            <mat-card-header>
+              <div class="header-content">
+                <mat-icon>description</mat-icon>
+                <span>Bid Information</span>
+              </div>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div *ngIf="!bid" class="error-message">
+                <p>Bid details not found</p>
+              </div>
+              
+              <div *ngIf="bid" class="bid-details">
+                <div class="bid-amount">
+                  <h3 class="amount">{{ formatCurrency(bidAmount) }}</h3>
+                  <p class="label">Bid Amount</p>
+                </div>
+                
+                <mat-divider></mat-divider>
+                
+                <div class="detail-section">
+                  <h4 class="section-title">
+                    <mat-icon>person</mat-icon>
+                    Freelancer
+                  </h4>
+                  <p class="freelancer-name">{{ bid.freelancer.fullName }}</p>
+                  <p class="freelancer-email">{{ bid.freelancer.email }}</p>
+                </div>
+                
+                <div *ngIf="bid.message" class="detail-section">
+                  <h4 class="section-title">
+                    <mat-icon>description</mat-icon>
+                    Message from Freelancer
+                  </h4>
+                  <div class="message-box">
+                    "{{ bid.message }}"
+                  </div>
+                </div>
+                
+                <div *ngIf="bid.proposedStartDate || bid.proposedEndDate" class="detail-section">
+                  <h4 class="section-title">
+                    <mat-icon>schedule</mat-icon>
+                    Proposed Timeline
+                  </h4>
+                  <div class="date-grid">
+                    <div *ngIf="bid.proposedStartDate" class="date-item">
+                      <span class="date-label">Start Date</span>
+                      <span class="date-value">{{ formatDate(bid.proposedStartDate) }}</span>
+                    </div>
+                    <div *ngIf="bid.proposedEndDate" class="date-item">
+                      <span class="date-label">End Date</span>
+                      <span class="date-value">{{ formatDate(bid.proposedEndDate) }}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div *ngIf="bid.additionalPolicy" class="detail-section">
+                  <h4 class="section-title">
+                    <mat-icon>gavel</mat-icon>
+                    Additional Policy
+                  </h4>
+                  <p class="policy-text">{{ bid.additionalPolicy }}</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        
+        <!-- Right side - Contract Form -->
+        <div class="contract-form-container">
+          <mat-card class="contract-form-card">
+            <mat-card-header>
+              <div class="header-content">
+                <mat-icon>handshake</mat-icon>
+                <span>Contract Details</span>
+              </div>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <form [formGroup]="contractForm" (ngSubmit)="onSubmit()">
+                <!-- Timeline Section -->
+                <div class="form-section">
+                  <h3 class="form-section-title">
+                    <mat-icon>access_time</mat-icon>
+                    Contract Timeline
+                  </h3>
+                  
+                  <div class="date-fields">
+                    <mat-form-field appearance="outline" class="date-field">
+                      <mat-label>Contract Start Date</mat-label>
+                      <input matInput [matDatepicker]="startDatePicker" formControlName="contractStartDate" required>
+                      <mat-datepicker-toggle matSuffix [for]="startDatePicker"></mat-datepicker-toggle>
+                      <mat-datepicker #startDatePicker></mat-datepicker>
+                      <mat-error *ngIf="contractForm.get('contractStartDate')?.invalid">
+                        Start date is required
+                      </mat-error>
+                    </mat-form-field>
+                    
+                    <mat-form-field appearance="outline" class="date-field">
+                      <mat-label>Contract End Date</mat-label>
+                      <input matInput [matDatepicker]="endDatePicker" formControlName="contractEndDate" required>
+                      <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
+                      <mat-datepicker #endDatePicker></mat-datepicker>
+                      <mat-error *ngIf="contractForm.get('contractEndDate')?.invalid">
+                        End date is required
+                      </mat-error>
+                    </mat-form-field>
+                  </div>
+                  
+                  <div *ngIf="contractForm.get('contractStartDate')?.value && contractForm.get('contractEndDate')?.value" 
+                       class="contract-duration">
+                    <mat-icon matTooltip="Contract duration based on the selected dates">help_outline</mat-icon>
+                    <span>Contract duration: <strong>{{ calculateDuration() }} days</strong></span>
+                  </div>
+                </div>
+                
+                <!-- Terms Section -->
+                <div class="form-section">
+                  <h3 class="form-section-title">
+                    <mat-icon>gavel</mat-icon>
+                    Terms & Conditions
+                  </h3>
+                  
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Additional Policy</mat-label>
+                    <textarea 
+                      matInput 
+                      rows="4" 
+                      formControlName="additionalPolicy" 
+                      placeholder="Specify any additional terms, revision policies, or other conditions"
+                      required></textarea>
+                    <mat-error *ngIf="contractForm.get('additionalPolicy')?.invalid">
+                      Additional policy is required
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="submit-button-container">
+                  <button 
+                    type="submit" 
+                    mat-raised-button 
+                    color="primary" 
+                    [disabled]="contractForm.invalid"
+                    class="submit-button">
+                    <mat-icon>send</mat-icon>
+                    Create Contract
+                  </button>
+                </div>
+              </form>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  </div>

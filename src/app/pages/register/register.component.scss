@@ -1,0 +1,20 @@
+/* src/app/pages/register/register.component.scss */
+.container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  mat-card {
+    max-width: 400px;
+    width: 100%;
+  }
+  
+  .full-width {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+  
+  mat-card-title {
+    margin-bottom: 20px;
+  }

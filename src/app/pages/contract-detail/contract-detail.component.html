@@ -1,0 +1,299 @@
+<!-- src/app/pages/contract-detail/contract-detail.component.html -->
+<div class="container">
+    <!-- Loading state -->
+    <div *ngIf="loading" class="loading-container">
+      <h2 class="loading-text">Loading Contract Details</h2>
+      <mat-progress-bar mode="indeterminate" class="loading-progress"></mat-progress-bar>
+    </div>
+  
+    <!-- Contract not found -->
+    <div *ngIf="!loading && !contract" class="not-found-container">
+      <h2 class="error-text">Contract not found</h2>
+      <button mat-raised-button color="primary" (click)="navigateToContracts()">
+        Back to Contracts
+      </button>
+    </div>
+  
+    <!-- Contract details -->
+    <div *ngIf="!loading && contract" class="contract-container">
+      <div class="header-section">
+        <h1 class="main-title">Contract Details</h1>
+        <p class="subtitle">Contract #{{ contract.id }} • {{ contract.status }}</p>
+      </div>
+  
+      <!-- Contract Status & Approval Process -->
+      <mat-card class="status-card">
+        <div class="status-header" [ngClass]="'status-bg-' + getContractStatusInfo(contract.status).color">
+          <div class="status-title">
+            <mat-icon>{{ getContractStatusInfo(contract.status).icon }}</mat-icon>
+            <span>Contract Status: {{ contract.status }}</span>
+          </div>
+          <mat-chip class="status-chip">{{ contract.contractType || 'Standard Contract' }}</mat-chip>
+        </div>
+  
+        <div class="card-content">
+          <mat-stepper [selectedIndex]="getCurrentStep()" linear #stepper>
+            <mat-step>
+              <ng-template matStepLabel>Employer Review</ng-template>
+            </mat-step>
+            <mat-step>
+              <ng-template matStepLabel>Freelancer Review</ng-template>
+            </mat-step>
+            <mat-step>
+              <ng-template matStepLabel>Contract Active</ng-template>
+            </mat-step>
+          </mat-stepper>
+  
+          <!-- Progress indicators -->
+          <div class="progress-indicators">
+            <div class="status-grid">
+              <!-- Employer status -->
+              <div class="status-item">
+                <div class="status-box">
+                  <p class="status-label">Employer</p>
+                  <div class="status-value">
+                    <mat-icon 
+                      [color]="contract.employerAccepted === true ? 'success' : 
+                                contract.employerAccepted === false ? 'warn' : 'warn'">
+                      {{ contract.employerAccepted === true ? 'check_circle' : 
+                         contract.employerAccepted === false ? 'cancel' : 'access_time' }}
+                    </mat-icon>
+                    <span 
+                      [ngClass]="{
+                        'success-text': contract.employerAccepted === true,
+                        'error-text': contract.employerAccepted === false,
+                        'warning-text': contract.employerAccepted === undefined || contract.employerAccepted === null
+                      }">
+                      {{ contract.employerAccepted === true ? 'Accepted' : 
+                         contract.employerAccepted === false ? 'Rejected' : 'Pending' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+  
+              <!-- Freelancer status -->
+              <div class="status-item">
+                <div class="status-box">
+                  <p class="status-label">Freelancer</p>
+                  <div class="status-value">
+                    <mat-icon 
+                      [color]="contract.freelancerAccepted === true ? 'success' : 
+                                contract.freelancerAccepted === false ? 'warn' : 'warn'">
+                      {{ contract.freelancerAccepted === true ? 'check_circle' : 
+                         contract.freelancerAccepted === false ? 'cancel' : 'access_time' }}
+                    </mat-icon>
+                    <span 
+                      [ngClass]="{
+                        'success-text': contract.freelancerAccepted === true,
+                        'error-text': contract.freelancerAccepted === false,
+                        'warning-text': contract.freelancerAccepted === undefined || contract.freelancerAccepted === null
+                      }">
+                      {{ contract.freelancerAccepted === true ? 'Accepted' : 
+                         contract.freelancerAccepted === false ? 'Rejected' : 'Pending' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+  
+              <!-- Contract status -->
+              <div class="status-item">
+                <div class="status-box">
+                  <p class="status-label">Contract Status</p>
+                  <div class="status-value">
+                    <mat-icon [color]="getContractStatusInfo(contract.status).color">
+                      {{ getContractStatusInfo(contract.status).icon }}
+                    </mat-icon>
+                    <span [ngClass]="getContractStatusInfo(contract.status).color + '-text'">
+                      {{ contract.status }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Approval actions -->
+          <div *ngIf="canEmployerAct() || canFreelancerAct()" class="approval-actions">
+            <div class="alert info-alert">
+              <p class="alert-message">
+                {{ canEmployerAct() 
+                   ? 'As the employer, you need to review and approve this contract.' 
+                   : 'As the freelancer, you need to review and approve this contract.' }}
+              </p>
+              <div class="alert-buttons">
+                <button mat-raised-button color="primary" (click)="updateContractStatus(true)">
+                  <mat-icon>check</mat-icon>
+                  Accept
+                </button>
+                <button mat-stroked-button color="warn" (click)="updateContractStatus(false)">
+                  <mat-icon>close</mat-icon>
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+  
+      <div class="contract-details-grid">
+        <!-- Left Column - Parties Information -->
+        <div class="parties-container">
+          <mat-card class="parties-card">
+            <div class="card-header">
+              <mat-icon color="primary">person</mat-icon>
+              <span>Contract Parties</span>
+            </div>
+  
+            <div class="card-content">
+              <!-- Employer -->
+              <div class="party-section">
+                <h3 class="section-title">Employer</h3>
+                <div class="party-info">
+                  <div class="avatar employer-avatar">
+                    {{ getInitials(contract.employer.fullName) }}
+                  </div>
+                  <div class="party-details">
+                    <p class="name">{{ contract.employer.fullName }}</p>
+                    <p class="email">{{ contract.employer.email }}</p>
+                    <div class="status-tag">
+                      <mat-chip 
+                        [color]="contract.employerAccepted === true ? 'success' : 
+                                  contract.employerAccepted === false ? 'warn' : 'warn'" 
+                        class="mini-chip">
+                        {{ contract.employerAccepted === true ? 'Accepted' : 
+                           contract.employerAccepted === false ? 'Rejected' : 'Pending' }}
+                      </mat-chip>
+                    </div>
+                  </div>
+                </div>
+              </div>
+  
+              <!-- Freelancer -->
+              <div class="party-section">
+                <h3 class="section-title">Freelancer</h3>
+                <div class="party-info">
+                  <div class="avatar freelancer-avatar">
+                    {{ getInitials(contract.freelancer.fullName) }}
+                  </div>
+                  <div class="party-details">
+                    <p class="name">{{ contract.freelancer.fullName }}</p>
+                    <p class="email">{{ contract.freelancer.email }}</p>
+                    <div class="status-tag">
+                      <mat-chip 
+                        [color]="contract.freelancerAccepted === true ? 'success' : 
+                                  contract.freelancerAccepted === false ? 'warn' : 'warn'" 
+                        class="mini-chip">
+                        {{ contract.freelancerAccepted === true ? 'Accepted' : 
+                           contract.freelancerAccepted === false ? 'Rejected' : 'Pending' }}
+                      </mat-chip>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-card>
+        </div>
+  
+        <!-- Right Column - Contract Details -->
+        <div class="details-container">
+          <mat-card class="details-card">
+            <div class="card-header">
+              <mat-icon color="primary">assignment</mat-icon>
+              <span>Contract Details</span>
+            </div>
+  
+            <div class="card-content">
+              <!-- Contract Period -->
+              <div class="period-section">
+                <h3 class="section-title">
+                  <mat-icon>calendar_month</mat-icon>
+                  Contract Period
+                </h3>
+  
+                <div class="date-grid">
+                  <div class="date-item">
+                    <div class="date-box">
+                      <span class="date-label">Start Date</span>
+                      <span class="date-value">{{ formatDate(contract.contractStartDate) }}</span>
+                    </div>
+                  </div>
+                  <div class="date-item">
+                    <div class="date-box">
+                      <span class="date-label">End Date</span>
+                      <span class="date-value">{{ formatDate(contract.contractEndDate) }}</span>
+                    </div>
+                  </div>
+                </div>
+  
+                <div class="progress-section">
+                  <div class="progress-header">
+                    <div class="progress-title">
+                      <mat-icon>access_time</mat-icon>
+                      <span>Contract Progress</span>
+                    </div>
+                    <span class="progress-value">
+                      {{ calculateProgress(contract.contractStartDate, contract.contractEndDate) }}%
+                    </span>
+                  </div>
+                  <mat-progress-bar 
+                    mode="determinate" 
+                    [value]="calculateProgress(contract.contractStartDate, contract.contractEndDate)"
+                    class="contract-progress">
+                  </mat-progress-bar>
+                  <div class="days-count">
+                    {{ getDaysBetween(contract.contractStartDate, contract.contractEndDate) }} total days
+                  </div>
+                </div>
+              </div>
+  
+              <!-- Policy & Support -->
+              <div class="policy-section">
+                <h3 class="section-title">
+                  <mat-icon>gavel</mat-icon>
+                  Policy & Support
+                </h3>
+  
+                <div *ngIf="contract.supportAvailability" class="policy-item">
+                  <div class="policy-box">
+                    <span class="policy-label">Support Availability</span>
+                    <p class="policy-value">{{ contract.supportAvailability }}</p>
+                  </div>
+                </div>
+  
+                <div *ngIf="contract.additionalPolicy" class="policy-item">
+                  <div class="policy-box">
+                    <span class="policy-label">Additional Policy</span>
+                    <p class="policy-value">{{ contract.additionalPolicy }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-card>
+        </div>
+      </div>
+  
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <div [class]="isMobile ? 'button-stack' : 'button-row'">
+          <button 
+            mat-stroked-button 
+            color="primary" 
+            (click)="navigateToContracts()"
+            class="action-button back-button">
+            <mat-icon class="rotate-180">arrow_forward</mat-icon>
+            Back to Contracts
+          </button>
+  
+          <button 
+            *ngIf="contract.employerAccepted && contract.freelancerAccepted"
+            mat-raised-button 
+            color="primary" 
+            (click)="navigateToMilestones()"
+            class="action-button">
+            View Milestones
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>

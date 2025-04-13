@@ -1,0 +1,152 @@
+<!-- src/app/pages/my-contracts/my-contracts.component.html -->
+<div class="container">
+    <div class="header-section">
+      <h1 class="main-title">My Contracts</h1>
+      <p class="subtitle">Manage and track all your active and upcoming projects</p>
+    </div>
+  
+    <!-- Loading state -->
+    <div *ngIf="loading" class="loading-container">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      <p class="loading-text">Loading your contracts...</p>
+    </div>
+  
+    <!-- Empty state -->
+    <div *ngIf="!loading && contracts.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">business_center</mat-icon>
+      <h2 class="empty-title">No contracts found</h2>
+      <p class="empty-message">You don't have any active contracts at the moment</p>
+      <button mat-raised-button color="primary" class="browse-button" (click)="navigateToBrowseProjects()">
+        Browse Projects
+      </button>
+    </div>
+  
+    <!-- Contracts grid -->
+    <div *ngIf="!loading && contracts.length > 0" class="contracts-grid">
+      <div class="contract-card" *ngFor="let item of contracts; let index = index">
+        <mat-card class="card">
+          <!-- Card Header -->
+          <div class="card-header" [ngClass]="'status-' + getStatusColor(item.contract.status ?? '')">
+            <div class="header-title">
+              <mat-icon [ngClass]="'status-' + getStatusColor(item.contract.status ?? '')">
+                {{ item.contract.status === 'ACTIVE' ? 'check_circle' : 
+                   item.contract.status === 'NEGOTIATION' ? 'hourglass_empty' : 'assignment' }}
+              </mat-icon>
+              <span class="contract-id">Contract #{{ item.contract.id }}</span>
+            </div>
+            <mat-chip class="status-chip">{{ item.contract.status }}</mat-chip>
+          </div>
+  
+          <mat-card-content>
+            <!-- Job Title -->
+            <div class="job-title-section">
+              <h3 class="job-title">
+                <mat-icon>description</mat-icon>
+                {{ item.job.jobTitle }}
+              </h3>
+              <p class="job-description">{{ item.job.jobDescription }}</p>
+            </div>
+  
+            <!-- Milestone Progress Bar -->
+            <div class="progress-section">
+              <div class="progress-header">
+                <span class="progress-label">Project Progress</span>
+                <span class="progress-value" 
+                      matTooltip="{{ getMilestoneStatusBreakdown(item.job.milestones) }}">
+                  {{ calculateMilestoneProgress(item.job.milestones) }}%
+                </span>
+              </div>
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="calculateMilestoneProgress(item.job.milestones)"
+                matTooltip="{{ getMilestoneStatusBreakdown(item.job.milestones) }}"
+                class="progress-bar"
+                [ngClass]="'status-' + getStatusColor(item.contract.status ?? '')"
+              ></mat-progress-bar>
+            </div>
+  
+            <!-- Milestone Status Icons -->
+            <div *ngIf="item.job.milestones && item.job.milestones.length > 0" class="milestones-section">
+              <div class="section-header">
+                <mat-icon>assignment</mat-icon>
+                <span>Milestones ({{ item.job.milestones.length }}):</span>
+              </div>
+              <div class="milestone-chips">
+                <div *ngFor="let milestone of item.job.milestones" 
+                    class="milestone-chip"
+                    [matTooltip]="milestone.title + ' (' + milestone.effort + '%)
+                                  Status: ' + (milestone.reviewStatus || (milestone.deliverableUrl ? 'Submitted' : 'Not Started'))">
+                  <mat-icon [color]="getMilestoneStatusColor(milestone.reviewStatus, milestone.deliverableUrl)">
+                    {{ milestone.reviewStatus === 'APPROVED' ? 'check_circle' : 
+                       milestone.reviewStatus === 'PENDING' ? 'pending' : 
+                       milestone.reviewStatus === 'REJECTED' ? 'error_outline' : 
+                       milestone.deliverableUrl ? 'assignment' : 'hourglass_empty' }}
+                  </mat-icon>
+                  <span>{{ milestone.effort }}%</span>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Other Party -->
+            <div class="other-party-section">
+              <div class="section-header">
+                <mat-icon>person</mat-icon>
+                <span>{{ isEmployer() ? 'Freelancer' : 'Employer' }}:</span>
+              </div>
+              <div class="party-info">
+                <div class="avatar" 
+                     [ngClass]="{'employer-avatar': !isEmployer(), 'freelancer-avatar': isEmployer()}">
+                  {{ getInitials(isEmployer() ? item.contract.freelancer?.fullName || '' : item.contract.employer?.fullName || '') }}
+                </div>
+                <div class="party-details">
+                  <p class="party-name">
+                    {{ isEmployer() ? item.contract.freelancer?.fullName : item.contract.employer?.fullName }}
+                  </p>
+                  <p class="party-email">
+                    {{ isEmployer() ? item.contract.freelancer?.email : item.contract.employer?.email }}
+                  </p>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Contract Period -->
+            <div class="contract-period-section">
+              <div class="section-header">
+                <mat-icon>schedule</mat-icon>
+                <span>Contract Period:</span>
+              </div>
+              <div class="period-container">
+                <div class="date-item">
+                  <span class="date-label">Start Date</span>
+                  <span class="date-value">{{ item.contract.contractStartDate | date:'mediumDate' }}</span>
+                </div>
+                <div class="date-item">
+                  <span class="date-label">End Date</span>
+                  <span class="date-value">{{ item.contract.contractEndDate | date:'mediumDate' }}</span>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+  
+          <mat-card-actions>
+            <button 
+              mat-stroked-button 
+              color="primary" 
+              (click)="navigateToContractDetails(item.contract.id ?? 0)">
+              <mat-icon>info</mat-icon>
+              Details
+            </button>
+  
+            <button 
+              *ngIf="item.contract.status === 'ACTIVE'"
+              mat-raised-button 
+              color="primary" 
+              (click)="navigateToContractMilestones(item.contract.id ?? 0)">
+              Milestones
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </div>
+  </div>

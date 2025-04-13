@@ -1,0 +1,244 @@
+<!-- src/app/pages/freelancer-bid/freelancer-bid.component.html -->
+<div class="container">
+    <div *ngIf="loading" class="loading-container">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      <p class="loading-text">Loading job details...</p>
+    </div>
+  
+    <div *ngIf="!loading && job" class="content-container">
+      <div class="header-section">
+        <h1 class="main-title">Create Your Bid</h1>
+        <p class="subtitle">Review the job details and submit a competitive bid</p>
+      </div>
+  
+      <div class="page-layout">
+        <!-- Left column - Job details -->
+        <div class="job-details-container">
+          <mat-card class="job-card">
+            <mat-card-header>
+              <div class="header-content">
+                <mat-icon>description</mat-icon>
+                <span>Job Details</span>
+              </div>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <h2 class="job-title">{{ job.jobTitle }}</h2>
+              <p class="job-description">{{ job.jobDescription }}</p>
+              
+              <div class="job-meta-details">
+                <div class="meta-item">
+                  <mat-icon color="primary">attach_money</mat-icon>
+                  <span class="meta-label">Budget:</span>
+                  <span class="meta-value primary">{{ formatCurrency(job.budget || 0) }}</span>
+                </div>
+                
+                <div class="meta-item">
+                  <mat-icon color="primary">calendar_today</mat-icon>
+                  <span class="meta-label">Deadline:</span>
+                  <span class="meta-value">{{ formatDisplayDate(job.deadline) }}</span>
+                </div>
+                
+                <div class="meta-item">
+                  <mat-icon color="primary">flag</mat-icon>
+                  <span class="meta-label">Category:</span>
+                  <mat-chip color="primary" selected>{{ job.category.name }}</mat-chip>
+                </div>
+                
+                <div class="meta-item">
+                  <mat-icon color="primary">person</mat-icon>
+                  <span class="meta-label">Employer:</span>
+                  <span class="meta-value">{{ job.employer.fullName }}</span>
+                </div>
+              </div>
+              
+              <mat-divider></mat-divider>
+              
+              <h3 class="section-title">
+                <mat-icon>timeline</mat-icon>
+                Project Timeline
+              </h3>
+              
+              <mat-horizontal-stepper labelPosition="bottom" *ngIf="job.milestones && job.milestones.length > 0">
+                <mat-step *ngFor="let milestone of job.milestones">
+                  <ng-template matStepLabel>{{ milestone.title }}</ng-template>
+                </mat-step>
+              </mat-horizontal-stepper>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        
+        <!-- Right column - Bid form -->
+        <div class="bid-form-container">
+          <mat-card class="form-card">
+            <mat-card-header>
+              <div class="header-content">
+                <mat-icon>monetization_on</mat-icon>
+                <span>Your Bid</span>
+              </div>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <form [formGroup]="bidForm" (ngSubmit)="onSubmit()">
+                <!-- Bid Amount Field -->
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Your Bid Amount</mat-label>
+                  <span matPrefix>$&nbsp;</span>
+                  <input matInput type="number" formControlName="bidAmount" required>
+                  <mat-hint *ngIf="getBidDifference()">
+                    Your bid is {{ getBidDifference()?.isLower ? 'lower' : 'higher' }} than the budget by 
+                    {{ formatCurrency(Math.abs(getBidDifference()?.amount || 0)) }} 
+                    ({{ Math.abs(getBidDifference()?.percent || 0).toFixed(1) }}%)
+                  </mat-hint>
+                  <mat-hint *ngIf="!getBidDifference()">
+                    Enter your proposed amount for the entire project
+                  </mat-hint>
+                </mat-form-field>
+                
+                <!-- Message Field -->
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Bid Message</mat-label>
+                  <textarea matInput rows="3" formControlName="message" required></textarea>
+                  <mat-hint>Explain why you're the best candidate for this job</mat-hint>
+                </mat-form-field>
+                
+                <!-- Date Fields -->
+                <div class="date-fields">
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Proposed Start Date</mat-label>
+                    <input matInput [matDatepicker]="startPicker" formControlName="proposedStartDate"
+         [min]="today" [max]="maxDate">
+                    <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #startPicker></mat-datepicker>
+                    <mat-hint>When can you start working on this project?</mat-hint>
+                  </mat-form-field>
+                  
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Proposed End Date</mat-label>
+                    <input matInput [matDatepicker]="endPicker" formControlName="proposedEndDate"
+         [min]="today" [max]="maxDate">
+                    <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #endPicker></mat-datepicker>
+                    <mat-hint>When do you expect to complete the project?</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+                <!-- Additional Policy -->
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Additional Policy</mat-label>
+                  <textarea matInput rows="2" formControlName="additionalPolicy"></textarea>
+                  <mat-hint>Any additional terms or policies you want to include</mat-hint>
+                </mat-form-field>
+                
+                <!-- Submit Button -->
+                <div class="submit-container">
+                  <button mat-raised-button color="primary" type="submit" class="submit-button">
+                    <mat-icon>send</mat-icon>
+                    Submit Bid
+                  </button>
+                </div>
+              </form>
+            </mat-card-content>
+          </mat-card>
+          
+          <!-- Milestone payments card -->
+          <mat-card *ngIf="job.milestones && job.milestones.length > 0" class="milestone-card">
+            <mat-card-header>
+              <div class="header-content">
+                <mat-icon>access_time</mat-icon>
+                <span>Milestone Breakdown</span>
+              </div>
+              <p class="subheader">How your bid affects the milestone payments</p>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div *ngIf="!bidForm.get('bidAmount')?.value" class="info-alert">
+                <mat-icon>info</mat-icon>
+                Enter your bid amount to see how it will be distributed across milestones
+              </div>
+              
+              <mat-accordion>
+                <mat-expansion-panel *ngFor="let milestone of calculatedMilestones; let i = index" 
+                                    [expanded]="i === 0" class="milestone-panel">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      <div class="milestone-number">{{ i + 1 }}</div>
+                      {{ milestone.title }}
+                    </mat-panel-title>
+                    <mat-panel-description>
+                      <span class="milestone-amount">
+                        {{ bidForm.get('bidAmount')?.value ? 
+                            formatCurrency(milestone.calculatedAmount || 0) : 
+                            formatCurrency(milestone.amount || 0) }}
+                      </span>
+                    </mat-panel-description>
+                  </mat-expansion-panel-header>
+                  
+                  <p class="milestone-description">{{ milestone.description }}</p>
+                  
+                  <div class="milestone-details-grid">
+                    <div class="milestone-detail">
+                      <span class="detail-label">Start Date</span>
+                      <span class="detail-value">{{ formatDisplayDate(milestone.startDate) }}</span>
+                    </div>
+                    <div class="milestone-detail">
+                      <span class="detail-label">Due Date</span>
+                      <span class="detail-value">{{ formatDisplayDate(milestone.dueDate) }}</span>
+                    </div>
+                    <div class="milestone-detail">
+                      <span class="detail-label">Effort</span>
+                      <span class="detail-value">{{ milestone.effort }}%</span>
+                    </div>
+                  </div>
+                  
+                  <div class="amount-comparison">
+                    <span class="original-amount">
+                      Original Amount: {{ formatCurrency(milestone.amount || 0) }}
+                    </span>
+                    
+                    <mat-chip *ngIf="bidForm.get('bidAmount')?.value" 
+                             [color]="(milestone.calculatedAmount || 0) < (milestone.amount || 0) ? 'warn' : 'primary'"
+                             selected>
+                      {{ (milestone.calculatedAmount || 0) < (milestone.amount || 0) ? '-' : '+' }}
+                      {{ formatCurrency(Math.abs((milestone.calculatedAmount || 0) - (milestone.amount || 0))) }}
+                    </mat-chip>
+                  </div>
+                  
+                  <!-- Checklist Section -->
+                  <div *ngIf="milestone.checklist" class="checklist-section">
+                    <h4 class="checklist-title">
+                      <mat-icon>format_list_bulleted</mat-icon>
+                      Requirements Checklist
+                    </h4>
+                    
+                    <div class="checklist-content">
+                      <app-checklist-renderer [markdown]="milestone.checklist"></app-checklist-renderer>
+                    </div>
+                  </div>
+                </mat-expansion-panel>
+              </mat-accordion>
+              
+              <div *ngIf="bidForm.get('bidAmount')?.value" class="total-summary">
+                <div class="summary-row">
+                  <div class="summary-item">
+                    <span class="summary-label">Original Total:</span>
+                    <span class="summary-value">{{ formatCurrency(job.budget || 0) }}</span>
+                  </div>
+                  <div class="summary-item text-right">
+                    <span class="summary-label">Your Bid:</span>
+                    <span class="summary-value highlight">
+                      {{ formatCurrency(+bidForm.get('bidAmount')?.value) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+    
+    <div *ngIf="!loading && !job" class="not-found">
+      <p>Job not found or has been removed.</p>
+    </div>
+  </div>

@@ -1,0 +1,91 @@
+<!-- src/app/components/header/header.component.html -->
+<mat-toolbar class="header-toolbar">
+    <img src="assets/images/skilllease-logo.png" alt="Skilllease Logo" class="logo" (click)="navigateTo('/')" />
+    
+    <span class="spacer"></span>
+    
+    <!-- Desktop Menu -->
+    <div class="desktop-menu">
+      <ng-container *ngIf="user">
+        <!-- Employer Menu Items -->
+        <ng-container *ngIf="user.role === 'EMPLOYER'">
+          <button mat-button (click)="navigateTo('/post-job')">
+            <mat-icon>work</mat-icon>
+            Post Job
+          </button>
+          <button mat-button (click)="navigateTo('/employer-jobs')">
+            <mat-icon>work</mat-icon>
+            My Jobs
+          </button>
+          <button mat-button (click)="navigateTo('/my-contracts')">
+            <mat-icon>work</mat-icon>
+            My Contracts
+          </button>
+        </ng-container>
+        
+        <!-- Freelancer Menu Items -->
+        <ng-container *ngIf="user.role === 'FREELANCER'">
+          <button mat-button (click)="navigateTo('/post-service')">
+            <mat-icon>build</mat-icon>
+            Post Service
+          </button>
+          <button mat-button (click)="navigateTo('/my-services')">
+            <mat-icon>build</mat-icon>
+            My Services
+          </button>
+          <button mat-button (click)="navigateTo('/my-contracts')">
+            <mat-icon>work</mat-icon>
+            My Contracts
+          </button>
+        </ng-container>
+        
+        <!-- Wallet Button -->
+        <button mat-button (click)="navigateTo('/recharge')">
+          <mat-icon>account_balance_wallet</mat-icon>
+          {{ walletBalance ? (walletBalance | number) + '₫' : 'Loading...' }}
+        </button>
+        
+        <!-- User Menu -->
+        <button mat-button [matMenuTriggerFor]="userMenu">
+          <div *ngIf="user.profilePictureUrl; else initialAvatar">
+            <img [src]="user.profilePictureUrl" alt="{{user.fullName}}" class="user-avatar" />
+          </div>
+          <ng-template #initialAvatar>
+            <div class="initial-avatar">{{ getUserInitials() }}</div>
+          </ng-template>
+          {{ user.fullName }}
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            Logout
+          </button>
+        </mat-menu>
+      </ng-container>
+    </div>
+    
+    <!-- Mobile Menu Button -->
+    <button mat-icon-button [matMenuTriggerFor]="mobileMenu" class="mobile-menu-button">
+      <mat-icon>menu</mat-icon>
+    </button>
+    
+    <!-- Mobile Menu -->
+    <mat-menu #mobileMenu="matMenu">
+      <ng-container *ngIf="user">
+        <!-- Employer Menu Items -->
+        <ng-container *ngIf="user.role === 'EMPLOYER'">
+          <button mat-menu-item (click)="navigateTo('/post-job')">Post Job</button>
+          <button mat-menu-item (click)="navigateTo('/employer-jobs')">My Jobs</button>
+        </ng-container>
+        
+        <!-- Freelancer Menu Items -->
+        <ng-container *ngIf="user.role === 'FREELANCER'">
+          <button mat-menu-item (click)="navigateTo('/post-service')">Post Service</button>
+          <button mat-menu-item (click)="navigateTo('/my-services')">My Services</button>
+        </ng-container>
+        
+        <button mat-menu-item (click)="navigateTo('/recharge')">Recharge</button>
+        <button mat-menu-item (click)="logout()">Logout</button>
+      </ng-container>
+    </mat-menu>
+  </mat-toolbar>
